@@ -5,7 +5,7 @@
 
 int main()
 {
-    char fileName[5];
+    char *fileName = (char*)malloc(5);
     printf("File Name: ");
     scanf("%s", fileName);
 
@@ -17,12 +17,15 @@ int main()
     printf("Packet Order: ");
     scanf("%d", &packetOrder);
 
-    char fileContent[50];
+    char *fileContent = (char*)malloc(5);
     printf("File Content: ");
     scanf("%s", fileContent);
 
-    char* packet = packData(fileName, packetTotal, packetOrder, fileContent);
-    printf("Packet: %s (%d)", packet, strlen(packet));
+    char* packet = packData(fileName, packetTotal, packetOrder, fileContent, 5);
+    for (int i = 0; i < 100; i++)
+    {
+        printf("p[%d]: %c\n", i, packet[i]);
+    }
 
     return 0;
 }
