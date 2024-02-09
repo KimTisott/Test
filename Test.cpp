@@ -5,39 +5,71 @@
 
 int main()
 {
-    char iFileName[kFileNameSize + 1];
-    printf("File Name: ");
-    scanf("%s", iFileName);
+    char iFileName[kFileNameSize + 1] = "Chewie-On-Guard.png";
+    /*printf("File Name: ");
+    scanf("%s", iFileName);*/
 
-    unsigned short iPacketTotal;
-    printf("Packet Total: ");
-    scanf("%hd", &iPacketTotal);
+    //unsigned short iPacketTotal;
+    //printf("Packet Total: ");
+    //scanf("%hd", &iPacketTotal);
 
-    unsigned short iPacketOrder;
-    printf("Packet Order: ");
-    scanf("%hd", &iPacketOrder);
+    //printf("Packet Order: ");
+    //scanf("%hd", &iPacketOrder);
 
     unsigned char iFileContent[kFileContentSize];
-    printf("File Content: ");
-    scanf("%s", iFileContent);
+    //printf("File Content: ");
+    //scanf("%s", iFileContent);
+    FILE* file = fopen(iFileName, "rb");
+    if (file == NULL)
+    {
+        printf("Cannot open file: %s", iFileName);
+        return -1;
+    }
+    FILE* ofile = fopen("newFile", "wb");
+    if (ofile == NULL)
+    {
+        return -1;
+    }
+    fseek(file, 0L, SEEK_END);
+    int fileSize = ftell(file);
+    rewind(file);
+    unsigned short iPacketTotal = (fileSize / kPacketSize) + 1;
+    unsigned short iPacketOrder = 0;
 
-    unsigned char iPacket[kPacketSize];
-    packData(iPacket, iFileName, iPacketTotal, iPacketOrder, iFileContent);
-    
-    char oFileName[kFileNameSize + 1];
-    unsigned short oPacketTotal = 0;
-    unsigned short oPacketOrder = 0;
-    unsigned char oFileContent[kFileContentSize];
-    char oChecksum[kChecksumSize + 1];
-    unpackData(iPacket, oFileName, &oPacketTotal, &oPacketOrder, oFileContent, oChecksum);
+    // Load the file contents into a buffer
+    size_t bytesRead;
+    while (!feof(file))
+    {
+        if ((bytesRead = fread(iFileContent, sizeof(unsigned char), kFileContentSize, file)) != 0)
+        {
+            unsigned char iPacket[kPacketSize];
+            packData(iPacket, iFileName, iPacketTotal, iPacketOrder, iFileContent);
 
-    printf("\nFile Name: %s", oFileName);
-    printf("\nPacket Total: %hd", oPacketTotal);
-    printf("\nPacket Order: %hd", oPacketOrder);
-    printf("\nFile Content: %s", oFileContent);
-    printf("\nChecksum: %s", oChecksum);
+            char oFileName[kFileNameSize + 1];
+            unsigned short oPacketTotal = 0;
+            unsigned short oPacketOrder = 0;
+            unsigned char oFileContent[kFileContentSize];
+            char oChecksum[kChecksumSize + 1];
+            unpackData(iPacket, oFileName, &oPacketTotal, &oPacketOrder, oFileContent, oChecksum);
+            fwrite(oFileContent, kFileContentSize, sizeof(unsigned char), ofile);
+            printf("\nFile Name: %s", oFileName);
+            printf("\nPacket Total: %d", oPacketTotal);
+            printf("\nPacket Order: %d", oPacketOrder);
+            printf("\nFile Content: %s", oFileContent);
+            printf("\nChecksum: %s", oChecksum);
 
-    printf("\nOK: %d", compareChecksum(oChecksum, iPacket));
+            printf("\nOK: %d", compareChecksum(oChecksum, iPacket));
+            iPacketOrder++;
+        }
+    }
+    fclose(file);
+    fclose(ofile);
+   
+
+
+   
+
+   
 
     return 0;
 }
