@@ -5,7 +5,7 @@
 
 int main()
 {
-    char iFileName[kFileNameSize + 1] = "Chewie-On-Guard.png";
+    char iFileName[kFileNameSize + 1] = "catVid.mp4";
     /*printf("File Name: ");
     scanf("%s", iFileName);*/
 
@@ -36,6 +36,12 @@ int main()
     unsigned short iPacketTotal = (fileSize / kPacketSize) + 1;
     unsigned short iPacketOrder = 0;
 
+    char oFileName[kFileNameSize + 1];
+    unsigned short oPacketTotal = 0;
+    unsigned short oPacketOrder = 0;
+    unsigned char oFileContent[kFileContentSize];
+    char oChecksum[kChecksumSize + 1];
+
     // Load the file contents into a buffer
     size_t bytesRead;
     while (!feof(file))
@@ -45,21 +51,20 @@ int main()
             unsigned char iPacket[kPacketSize];
             packData(iPacket, iFileName, iPacketTotal, iPacketOrder, iFileContent);
 
-            char oFileName[kFileNameSize + 1];
-            unsigned short oPacketTotal = 0;
-            unsigned short oPacketOrder = 0;
-            unsigned char oFileContent[kFileContentSize];
-            char oChecksum[kChecksumSize + 1];
             unpackData(iPacket, oFileName, &oPacketTotal, &oPacketOrder, oFileContent, oChecksum);
-            fwrite(oFileContent, kFileContentSize, sizeof(unsigned char), ofile);
             printf("\nFile Name: %s", oFileName);
             printf("\nPacket Total: %d", oPacketTotal);
             printf("\nPacket Order: %d", oPacketOrder);
             printf("\nFile Content: %s", oFileContent);
             printf("\nChecksum: %s", oChecksum);
-
-            printf("\nOK: %d", compareChecksum(oChecksum, iPacket));
-            iPacketOrder++;
+            int status = compareChecksum(oChecksum, iPacket);
+            printf("\nOK: %d", status);
+            if (status == 1)
+            {
+                fwrite(oFileContent, kFileContentSize, sizeof(unsigned char), ofile);
+                iPacketOrder++;
+            }
+          
         }
     }
     fclose(file);
