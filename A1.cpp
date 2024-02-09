@@ -7,24 +7,9 @@
 #include "hash-library/md5.h"
 #include "hash-library/md5.cpp"
 
-const char kPacketSeparator = '|';
-const char kInvalidFilenameChars[] = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
-const int kFilenameSize = 50;
-const int kPacketSize = 1024; // 1KB
-
-void concatenate(unsigned char* left, unsigned char* right, size_t size)
-{
-    memcpy(left, right, size);
-}
-
-void concatenate(unsigned char* left, size_t offset, unsigned char* right, size_t size)
-{
-    concatenate(left + offset, right, size);
-}
-
 int validateFilename(char* fileName)
 {
-    if (strlen(fileName) > kFilenameSize)
+    if (strlen(fileName) > kFileNameSize)
     {
         return FILENAME_TOOLONG;
     }
@@ -39,113 +24,41 @@ int validateFilename(char* fileName)
     }
 }
 
-char* packData(char* fileName, short packetTotal, short packetOrder, char* fileContent, size_t fileContentSize)
+void packData(unsigned char packet[kPacketSize], char fileName[kFileNameSize], short packetTotal, short packetOrder, unsigned char fileContent[kFileContentSize])
 {
-    char* packet = (char*)malloc(kPacketSize);
-
-    if (packet != NULL)
-    {
-        //concatenate(packet, 0, fileName, kFilenameSize);
-        
-    }
-
-    return packet;
+    memcpy(packet + kUdpHeaderSize, fileName, kFileNameSize);
+    memcpy(packet + kUdpHeaderSize + kFileNameSize, &packetTotal, kPacketTotalSize);
+    memcpy(packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize, &packetOrder, kPacketOrderSize);
+    memcpy(packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize, fileContent, kFileContentSize);
 }
 
-void unpackData(char* packet, char* fileName, short packetTotal, short packetOrder, char* fileContent)
+void unpackData(unsigned char packet[kPacketSize], char fileName[kFileNameSize], short packetTotal, short packetOrder, unsigned char fileContent[kFileContentSize])
 {
-    fileName = packet;
-    packet += kFilenameSize + sizeof(kPacketSeparator);
-    packetTotal = atoi(packet);
-    packet += sizeof(packetTotal) + sizeof(kPacketSeparator);
-    packetOrder = atoi(packet);
-    packet += sizeof(packetOrder) + sizeof(kPacketSeparator);
-    fileContent = packet;
+    memcpy(fileName, packet + kUdpHeaderSize, kFileNameSize);
+    packetTotal = packet[kUdpHeaderSize + kFileNameSize];
+    packetOrder = packet[kUdpHeaderSize + kFileNameSize + kPacketTotalSize];
+    memcpy(fileContent, packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize, kFileContentSize);
 }
 
-char* generateChecksum(char* input,size_t sizeOfString)
+void generateChecksum(char checksum[kChecksumSize], unsigned char packet[kPacketSize])
 {
-    char* checkSum = (char*)malloc(sizeOfString + 1); // Allocate space for null-terminator
-    if (checkSum == NULL) {
-        // Handle allocation failure
-        fprintf(stderr, "Memory allocation failed\n");
-        exit(EXIT_FAILURE);
-    }
- 
     MD5 md5;
-   /* char str[10] = "HELOLO";*/
-    md5.add(input, sizeOfString);
-        
-    strncpy(checkSum, md5.getHash().c_str(), sizeOfString); // Use strncpy for safer copying
-    checkSum[sizeOfString] = '\0'; // Null-terminate the string
-    return checkSum;
+    md5.add(packet, kPacketSize);
+    strncpy(checksum, md5.getHash().c_str(), kChecksumSize);
 }
 
-
-bool checkChecksum(char* input, char* sendChecksum, size_t sizeOfString)
+bool compareChecksum(char* input, char* sendChecksum, size_t sizeOfString)
 {
-    char* resultChecksum = generateChecksum(input, sizeOfString); // Calculate the checksum
-    int result = memcmp(resultChecksum, sendChecksum, sizeOfString); // Compare the checksums
-    free(resultChecksum); // Free memory allocated by generateChecksum
-    if (result == 0)
-    {
-        return true;
-    }
-    else
-    {
-        return false; // Return true if checksums are equal, false otherwise
-    }
-   
+    //char* resultChecksum = generateChecksum(input, sizeOfString); // Calculate the checksum
+    //int result = memcmp(resultChecksum, sendChecksum, sizeOfString); // Compare the checksums
+    //free(resultChecksum); // Free memory allocated by generateChecksum
+    //if (result == 0)
+    //{
+    //    return true;
+    //}
+    //else
+    //{
+    //    return false; // Return true if checksums are equal, false otherwise
+    //}
+    return true;
 }
-
-//char* packData(char* fileName, short packetTotal, short packetOrder, char* fileContent)
-//{
-//    char* packet;
-//
-//    strcpy(packet, fileName);
-//
-//    strcat(packet, kPacketSeparator);
-//
-//    sprintf(packet, "%d", packetTotal);
-//
-//    strcat(packet, kPacketSeparator);
-//
-//    sprintf(packet, "%d", packetOrder);
-//
-//    strcat(packet, kPacketSeparator);
-//
-//    strcat(packet, fileContent);
-//
-//    return packet;
-//}
-//
-//void unpackData(char* packet, char* fileName, int packetTotal, int packetOrder, char* fileContent)
-//{
-//    char* token = NULL;
-//    for (int i = 0; i < 4; i++)
-//    {
-//        token = strtok(packet, kPacketSeparator);
-//        if (token != NULL)
-//        {
-//            switch (i)
-//            {
-//                case 0:
-//                {
-//                    strcpy(fileName, token);
-//                }
-//                case 1:
-//                {
-//                    packetTotal = atoi(token);
-//                }
-//                case 2:
-//                {
-//                    packetOrder = atoi(token);
-//                }
-//                case 3:
-//                {
-//                    strcpy(fileContent, token);
-//                }
-//            }
-//        }
-//    }
-//}

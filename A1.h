@@ -1,10 +1,19 @@
+const char kInvalidFilenameChars[] = { '\\', '/', ':', '*', '?', '"', '<', '>', '|' };
+const int kUdpHeaderSize = 12;
+const int kFileNameSize = 51; // 50 characters
+const int kPacketTotalSize = sizeof(short);
+const int kPacketOrderSize = sizeof(short);
+const int kFileContentSize = 384 - kFileNameSize - kPacketTotalSize - kPacketOrderSize;
+const int kPacketSize = kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize + kFileContentSize;
+const int kChecksumSize = 33; // 32 characters
+
 enum ERROR {
 	FILENAME_INVALIDCHARACTERS,
 	FILENAME_TOOLONG
 };
 
-char* packData(char* fileName, short packetTotal, short packetOrder, char* fileContent, size_t fileContentSize);
-void unpackData(char* packet, char* fileName, int packetTotal, int packetOrder, char* fileContent);
+void packData(unsigned char packet[kPacketSize], char fileName[kFileNameSize], short packetTotal, short packetOrder, unsigned char fileContent[kFileContentSize]);
+void unpackData(unsigned char packet[kPacketSize], char fileName[kFileNameSize], short packetTotal, short packetOrder, unsigned char fileContent[kFileContentSize]);
 int validateFilename(char* fileName);
-char* generateChecksum(char* input, size_t sizeOfString);
-bool checkChecksum(char* input, char* sendChecksum, size_t sizeOfString);
+void generateChecksum(char checksum[kChecksumSize], unsigned char packet[kPacketSize]);
+int checkChecksum(char* input, char* sendChecksum, size_t sizeOfString);

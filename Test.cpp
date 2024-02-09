@@ -5,52 +5,37 @@
 
 int main()
 {
-    char *fileName = (char*)malloc(5);
-	
- /*   char fileName[5];
- 
+    char fileName[kFileContentSize];
     printf("File Name: ");
     scanf("%s", fileName);
 
-    short packetTotal = 0;
+    short packetTotal;
     printf("Packet Total: ");
-    scanf("%d", &packetTotal);
+    scanf("%hd", &packetTotal);
 
     short packetOrder = 0;
     printf("Packet Order: ");
-    scanf("%d", &packetOrder);*/
+    scanf("%hd", &packetOrder);
 
-    char *fileContent = (char*)malloc(5);
+    unsigned char fileContent[kFileContentSize];
     printf("File Content: ");
     scanf("%s", fileContent);
-	
-    char* packet = packData(fileName, packetTotal, packetOrder, fileContent, 5);
-    for (int i = 0; i < 100; i++)
-    {
-        printf("p[%d]: %c\n", i, packet[i]);
-    }
-	
-    //char* packet = packData(fileName, packetTotal, packetOrder, fileContent);
 
-    // Call generateChecksum
-    char* senderChecksum = generateChecksum(fileContent, 100);
+    unsigned char packet[kPacketSize] = {};
+    packData(packet, fileName, packetTotal, packetOrder, fileContent);
+    char checksum[kChecksumSize] = {};
+    generateChecksum(checksum, packet);
+    printf("Checksum: %s", checksum);
+    
+    unpackData(packet, fileName, packetTotal, packetOrder, fileContent);
 
-    // Simulate receiving the checksum
-    bool isChecksumEqual = checkChecksum(fileContent, senderChecksum, 100);
+    printf("\nFile Name: %s", fileName);
+    printf("\nPacket Total: %hd", packetTotal);
+    printf("\nPacket Order: %hd", packetOrder);
+    printf("\nFile Content: %s", fileContent);
 
-    if (isChecksumEqual)
-    {
-        printf("They are equal");
-    }
-    else {
-        printf("They are NOT equal");
-    }
-
-
-    free(senderChecksum); // Free memory allocated by generateChecksum
-
-
-    //printf("Packet: %s (%d)", packet, strlen(packet));
+    generateChecksum(checksum, packet);
+    printf("\nChecksum: %s", checksum);
 
     return 0;
 }
