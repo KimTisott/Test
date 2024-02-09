@@ -30,35 +30,45 @@ void packData(unsigned char packet[kPacketSize], char fileName[kFileNameSize], s
     memcpy(packet + kUdpHeaderSize + kFileNameSize, &packetTotal, kPacketTotalSize);
     memcpy(packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize, &packetOrder, kPacketOrderSize);
     memcpy(packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize, fileContent, kFileContentSize);
+    char checksum[kChecksumSize + 1];
+    generateChecksum(checksum, packet);
+    checksum[kChecksumSize] = '\0';
+    printf("Checksum: %s", checksum);
+    memcpy(packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize + kFileContentSize, checksum, kChecksumSize);
 }
 
-void unpackData(unsigned char packet[kPacketSize], char fileName[kFileNameSize], short packetTotal, short packetOrder, unsigned char fileContent[kFileContentSize])
+void unpackData(unsigned char packet[kPacketSize], char fileName[kFileNameSize + 1], unsigned short *packetTotal, unsigned short *packetOrder, unsigned char fileContent[kFileContentSize], char checksum[kChecksumSize + 1])
 {
     memcpy(fileName, packet + kUdpHeaderSize, kFileNameSize);
-    packetTotal = packet[kUdpHeaderSize + kFileNameSize];
-    packetOrder = packet[kUdpHeaderSize + kFileNameSize + kPacketTotalSize];
+    fileName[kFileNameSize] = '\0';
+    *packetTotal = packet[kUdpHeaderSize + kFileNameSize];
+    *packetTotal += packet[kUdpHeaderSize + kFileNameSize + 1] << 8;
+    *packetOrder = packet[kUdpHeaderSize + kFileNameSize + kPacketTotalSize];
+    *packetOrder += packet[kUdpHeaderSize + kFileNameSize + kPacketTotalSize + 1] << 8;
     memcpy(fileContent, packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize, kFileContentSize);
+    memcpy(checksum, packet + kUdpHeaderSize + kFileNameSize + kPacketTotalSize + kPacketOrderSize + kFileContentSize, kChecksumSize);
+    checksum[kChecksumSize] = '\0';
 }
 
 void generateChecksum(char checksum[kChecksumSize], unsigned char packet[kPacketSize])
 {
     MD5 md5;
-    md5.add(packet, kPacketSize);
-    strncpy(checksum, md5.getHash().c_str(), kChecksumSize);
+    md5.add(packet, kPacketSize - kChecksumSize);
+    memcpy(checksum, md5.getHash().c_str(), kChecksumSize);
 }
 
-bool compareChecksum(char* input, char* sendChecksum, size_t sizeOfString)
+int compareChecksum(char checksum[kChecksumSize], unsigned char packet[kPacketSize])
 {
-    //char* resultChecksum = generateChecksum(input, sizeOfString); // Calculate the checksum
-    //int result = memcmp(resultChecksum, sendChecksum, sizeOfString); // Compare the checksums
-    //free(resultChecksum); // Free memory allocated by generateChecksum
-    //if (result == 0)
-    //{
-    //    return true;
-    //}
-    //else
-    //{
-    //    return false; // Return true if checksums are equal, false otherwise
-    //}
-    return true;
+    char generatedChecksum[kChecksumSize];
+    generateChecksum(generatedChecksum, packet);
+
+    for (int i = 0; i < kChecksumSize; i++)
+    {
+        if (checksum[i] != generatedChecksum[i])
+        {
+            return 0;
+        }
+    }
+
+    return 1;
 }

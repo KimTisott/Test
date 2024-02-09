@@ -5,37 +5,39 @@
 
 int main()
 {
-    char fileName[kFileContentSize];
+    char iFileName[kFileNameSize + 1];
     printf("File Name: ");
-    scanf("%s", fileName);
+    scanf("%s", iFileName);
 
-    short packetTotal;
+    unsigned short iPacketTotal;
     printf("Packet Total: ");
-    scanf("%hd", &packetTotal);
+    scanf("%hd", &iPacketTotal);
 
-    short packetOrder = 0;
+    unsigned short iPacketOrder;
     printf("Packet Order: ");
-    scanf("%hd", &packetOrder);
+    scanf("%hd", &iPacketOrder);
 
-    unsigned char fileContent[kFileContentSize];
+    unsigned char iFileContent[kFileContentSize];
     printf("File Content: ");
-    scanf("%s", fileContent);
+    scanf("%s", iFileContent);
 
-    unsigned char packet[kPacketSize] = {};
-    packData(packet, fileName, packetTotal, packetOrder, fileContent);
-    char checksum[kChecksumSize] = {};
-    generateChecksum(checksum, packet);
-    printf("Checksum: %s", checksum);
+    unsigned char iPacket[kPacketSize];
+    packData(iPacket, iFileName, iPacketTotal, iPacketOrder, iFileContent);
     
-    unpackData(packet, fileName, packetTotal, packetOrder, fileContent);
+    char oFileName[kFileNameSize + 1];
+    unsigned short oPacketTotal = 0;
+    unsigned short oPacketOrder = 0;
+    unsigned char oFileContent[kFileContentSize];
+    char oChecksum[kChecksumSize + 1];
+    unpackData(iPacket, oFileName, &oPacketTotal, &oPacketOrder, oFileContent, oChecksum);
 
-    printf("\nFile Name: %s", fileName);
-    printf("\nPacket Total: %hd", packetTotal);
-    printf("\nPacket Order: %hd", packetOrder);
-    printf("\nFile Content: %s", fileContent);
+    printf("\nFile Name: %s", oFileName);
+    printf("\nPacket Total: %hd", oPacketTotal);
+    printf("\nPacket Order: %hd", oPacketOrder);
+    printf("\nFile Content: %s", oFileContent);
+    printf("\nChecksum: %s", oChecksum);
 
-    generateChecksum(checksum, packet);
-    printf("\nChecksum: %s", checksum);
+    printf("\nOK: %d", compareChecksum(oChecksum, iPacket));
 
     return 0;
 }
